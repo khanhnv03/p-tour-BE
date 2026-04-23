@@ -1,6 +1,7 @@
 package com.ptit.tour.domain.review.entity;
 
 import com.ptit.tour.domain.booking.entity.Booking;
+import com.ptit.tour.domain.review.enums.ReviewStatus;
 import com.ptit.tour.domain.shared.BaseEntity;
 import com.ptit.tour.domain.tour.entity.Tour;
 import com.ptit.tour.domain.user.entity.User;
@@ -36,7 +37,8 @@ public class Review extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
-    @Column(name = "is_verified", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "review_status", nullable = false, length = 10)
     @Builder.Default
-    private boolean verified = false;
+    private ReviewStatus reviewStatus = ReviewStatus.PENDING;
 }

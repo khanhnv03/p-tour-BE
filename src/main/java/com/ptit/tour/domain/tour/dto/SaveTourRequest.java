@@ -53,6 +53,7 @@ public record SaveTourRequest(
 
     public record ActivityRequest(
         @NotNull LocalTime activityTime,
+        String title,
         @NotBlank String description,
         int sortOrder
     ) {}

@@ -1,6 +1,7 @@
 package com.ptit.tour.domain.review.dto;
 
 import com.ptit.tour.domain.review.entity.Review;
+import com.ptit.tour.domain.review.enums.ReviewStatus;
 
 import java.time.Instant;
 
@@ -13,7 +14,7 @@ public record ReviewDto(
     Long bookingId,
     int rating,
     String comment,
-    boolean verified,
+    ReviewStatus reviewStatus,
     Instant createdAt
 ) {
     public static ReviewDto from(Review r) {
@@ -21,7 +22,7 @@ public record ReviewDto(
             r.getId(), r.getTour().getId(),
             r.getUser().getId(), r.getUser().getFullName(), r.getUser().getAvatarUrl(),
             r.getBooking().getId(), r.getRating(), r.getComment(),
-            r.isVerified(), r.getCreatedAt()
+            r.getReviewStatus(), r.getCreatedAt()
         );
     }
 }

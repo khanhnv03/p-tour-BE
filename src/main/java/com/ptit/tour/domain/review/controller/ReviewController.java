@@ -5,6 +5,7 @@ import com.ptit.tour.common.response.PageResponse;
 import com.ptit.tour.common.security.UserPrincipal;
 import com.ptit.tour.domain.review.dto.CreateReviewRequest;
 import com.ptit.tour.domain.review.dto.ReviewDto;
+import com.ptit.tour.domain.review.enums.ReviewStatus;
 import com.ptit.tour.domain.review.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,12 +33,28 @@ public class ReviewController {
         return ApiResponse.created(reviewService.create(principal.getId(), request));
     }
 
-    @Operation(summary = "Danh sách reviews của một tour")
+    @Operation(summary = "Danh sách reviews đã duyệt của một tour")
     @GetMapping("/tours/{tourId}/reviews")
     public ApiResponse<PageResponse<ReviewDto>> getByTour(
         @PathVariable Long tourId,
         @PageableDefault(size = 10) Pageable pageable) {
         return ApiResponse.ok(PageResponse.of(reviewService.getByTour(tourId, pageable)));
+    }
+
+    @Operation(summary = "[Admin] Danh sách tất cả reviews")
+    @GetMapping("/admin/reviews")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<PageResponse<ReviewDto>> getAll(
+        @PageableDefault(size = 20) Pageable pageable) {
+        return ApiResponse.ok(PageResponse.of(reviewService.getAll(pageable)));
+    }
+
+    @Operation(summary = "[Admin] Duyệt/ẩn review")
+    @PatchMapping("/admin/reviews/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<ReviewDto> updateStatus(@PathVariable Long id,
+                                                @RequestParam ReviewStatus status) {
+        return ApiResponse.ok(reviewService.updateStatus(id, status));
     }
 
     @Operation(summary = "[Admin] Xoá review")

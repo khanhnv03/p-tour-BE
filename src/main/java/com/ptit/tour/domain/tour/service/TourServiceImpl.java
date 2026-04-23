@@ -8,18 +8,22 @@ import com.ptit.tour.domain.tour.dto.TourDetailDto;
 import com.ptit.tour.domain.tour.dto.TourSummaryDto;
 import com.ptit.tour.domain.tour.entity.*;
 import com.ptit.tour.domain.tour.enums.TourDifficulty;
+import com.ptit.tour.domain.tour.enums.TourStatus;
 import com.ptit.tour.domain.tour.repository.TourRepository;
 import com.ptit.tour.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class TourServiceImpl implements TourService {
 
@@ -28,23 +32,39 @@ public class TourServiceImpl implements TourService {
 
     @Override
     public Page<TourSummaryDto> search(String keyword, Long destinationId,
+                                        LocalDate departureDate, Integer guestCount, Integer durationDays,
                                         TourDifficulty difficulty,
                                         BigDecimal minPrice, BigDecimal maxPrice,
+                                        BigDecimal minRating,
                                         Pageable pageable) {
-        return tourRepository.search(keyword, destinationId, difficulty, minPrice, maxPrice, pageable)
+        return tourRepository.search(keyword, destinationId, departureDate, guestCount, durationDays,
+                difficulty, minPrice, maxPrice, minRating, pageable)
             .map(TourSummaryDto::from);
     }
 
     @Override
     public TourDetailDto getById(Long id) {
-        return TourDetailDto.from(getEntityById(id));
+        return TourDetailDto.from(tourRepository.findByIdAndStatus(id, TourStatus.PUBLISHED)
+            .orElseThrow(() -> new ResourceNotFoundException("Tour", id)));
     }
 
     @Override
     public TourDetailDto getBySlug(String slug) {
-        return tourRepository.findBySlug(slug)
+        return tourRepository.findBySlugAndStatus(slug, TourStatus.PUBLISHED)
             .map(TourDetailDto::from)
             .orElseThrow(() -> new ResourceNotFoundException("Tour", "slug", slug));
+    }
+
+    @Override
+    public List<TourSummaryDto> getFeatured(int limit) {
+        return tourRepository.findFeatured(PageRequest.of(0, limit)).stream()
+            .map(TourSummaryDto::from).toList();
+    }
+
+    @Override
+    public List<TourSummaryDto> getPopular(int limit) {
+        return tourRepository.findPopular(PageRequest.of(0, limit)).stream()
+            .map(TourSummaryDto::from).toList();
     }
 
     @Override
@@ -107,8 +127,6 @@ public class TourServiceImpl implements TourService {
             .orElseThrow(() -> new ResourceNotFoundException("Tour", id));
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
-
     private void applySubEntities(Tour tour, SaveTourRequest req) {
         if (req.galleryImages() != null) {
             List<TourGalleryImage> images = req.galleryImages().stream()
@@ -139,7 +157,7 @@ public class TourServiceImpl implements TourService {
                 if (d.activities() != null) {
                     d.activities().forEach(a -> day.getActivities().add(
                         ItineraryActivity.builder()
-                            .itineraryDay(day).activityTime(a.activityTime())
+                            .itineraryDay(day).activityTime(a.activityTime()).title(a.title())
                             .description(a.description()).sortOrder(a.sortOrder()).build()
                     ));
                 }

@@ -76,9 +76,9 @@ public record TourDetailDto(
         }
     }
 
-    public record ActivityDto(Long id, LocalTime activityTime, String description, int sortOrder) {
+    public record ActivityDto(Long id, LocalTime activityTime, String title, String description, int sortOrder) {
         public static ActivityDto from(ItineraryActivity a) {
-            return new ActivityDto(a.getId(), a.getActivityTime(), a.getDescription(), a.getSortOrder());
+            return new ActivityDto(a.getId(), a.getActivityTime(), a.getTitle(), a.getDescription(), a.getSortOrder());
         }
     }
 

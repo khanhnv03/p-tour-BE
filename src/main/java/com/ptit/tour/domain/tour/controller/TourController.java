@@ -18,6 +18,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 
 @Tag(name = "Tours")
 @RestController
@@ -32,12 +34,30 @@ public class TourController {
     public ApiResponse<PageResponse<TourSummaryDto>> search(
         @RequestParam(required = false) String keyword,
         @RequestParam(required = false) Long destinationId,
+        @RequestParam(required = false) LocalDate date,
+        @RequestParam(required = false) Integer guests,
+        @RequestParam(required = false) Integer duration,
         @RequestParam(required = false) TourDifficulty difficulty,
         @RequestParam(required = false) BigDecimal minPrice,
         @RequestParam(required = false) BigDecimal maxPrice,
+        @RequestParam(required = false) BigDecimal minRating,
         @PageableDefault(size = 12) Pageable pageable) {
         return ApiResponse.ok(PageResponse.of(
-            tourService.search(keyword, destinationId, difficulty, minPrice, maxPrice, pageable)));
+            tourService.search(keyword, destinationId, date, guests, duration, difficulty, minPrice, maxPrice, minRating, pageable)));
+    }
+
+    @Operation(summary = "Tour nổi bật (top rating)")
+    @GetMapping("/featured")
+    public ApiResponse<List<TourSummaryDto>> getFeatured(
+        @RequestParam(defaultValue = "6") int limit) {
+        return ApiResponse.ok(tourService.getFeatured(limit));
+    }
+
+    @Operation(summary = "Tour phổ biến (top booking)")
+    @GetMapping("/popular")
+    public ApiResponse<List<TourSummaryDto>> getPopular(
+        @RequestParam(defaultValue = "6") int limit) {
+        return ApiResponse.ok(tourService.getPopular(limit));
     }
 
     @Operation(summary = "Chi tiết tour theo ID")

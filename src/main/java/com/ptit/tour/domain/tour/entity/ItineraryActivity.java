@@ -22,6 +22,9 @@ public class ItineraryActivity extends BaseEntity {
     @Column(name = "activity_time", nullable = false)
     private LocalTime activityTime;
 
+    @Column(name = "title")
+    private String title;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 

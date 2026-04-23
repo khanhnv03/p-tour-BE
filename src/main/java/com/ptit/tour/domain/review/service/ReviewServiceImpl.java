@@ -8,6 +8,7 @@ import com.ptit.tour.domain.booking.service.BookingService;
 import com.ptit.tour.domain.review.dto.CreateReviewRequest;
 import com.ptit.tour.domain.review.dto.ReviewDto;
 import com.ptit.tour.domain.review.entity.Review;
+import com.ptit.tour.domain.review.enums.ReviewStatus;
 import com.ptit.tour.domain.review.repository.ReviewRepository;
 import com.ptit.tour.domain.tour.entity.Tour;
 import com.ptit.tour.domain.user.repository.UserRepository;
@@ -21,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
 
@@ -48,23 +50,41 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review review = Review.builder()
             .tour(booking.getTour()).user(user).booking(booking)
-            .rating(req.rating()).comment(req.comment()).verified(true)
+            .rating(req.rating()).comment(req.comment())
+            .reviewStatus(ReviewStatus.PENDING)
             .build();
         review = reviewRepository.save(review);
-
-        updateTourRating(booking.getTour());
         return ReviewDto.from(review);
     }
 
     @Override
     public Page<ReviewDto> getByTour(Long tourId, Pageable pageable) {
-        return reviewRepository.findByTourId(tourId, pageable).map(ReviewDto::from);
+        return reviewRepository.findByTourIdAndReviewStatus(tourId, ReviewStatus.APPROVED, pageable)
+            .map(ReviewDto::from);
     }
 
     @Override
     public ReviewDto getById(Long id) {
         return ReviewDto.from(reviewRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Review", id)));
+    }
+
+    @Override
+    @Transactional
+    public ReviewDto updateStatus(Long id, ReviewStatus status) {
+        Review review = reviewRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Review", id));
+        review.setReviewStatus(status);
+        reviewRepository.save(review);
+        if (status == ReviewStatus.APPROVED || status == ReviewStatus.HIDDEN) {
+            updateTourRating(review.getTour());
+        }
+        return ReviewDto.from(review);
+    }
+
+    @Override
+    public Page<ReviewDto> getAll(Pageable pageable) {
+        return reviewRepository.findAll(pageable).map(ReviewDto::from);
     }
 
     @Override
