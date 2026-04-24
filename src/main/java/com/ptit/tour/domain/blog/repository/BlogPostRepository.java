@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,4 +23,15 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
     List<BlogPost> findDueScheduledPosts(Instant now);
 
     Page<BlogPost> findByTitleContainingIgnoreCaseAndStatus(String keyword, BlogStatus status, Pageable pageable);
+
+    @Query("""
+        SELECT p FROM BlogPost p
+        WHERE (:status IS NULL OR p.status = :status)
+          AND (:keyword IS NULL
+            OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(p.excerpt) LIKE LOWER(CONCAT('%', :keyword, '%')))
+        """)
+    Page<BlogPost> searchAdmin(@Param("status") BlogStatus status,
+                               @Param("keyword") String keyword,
+                               Pageable pageable);
 }

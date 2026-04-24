@@ -9,12 +9,15 @@ import org.springframework.data.domain.Pageable;
 
 public interface OrderService {
     OrderDto create(Long userId, CreateOrderRequest request);
-    OrderDto getById(Long id);
-    OrderDto getByBookingId(Long bookingId);
-    /** Simulate payment confirmation (replace with real gateway callback). */
-    OrderDto confirmPayment(Long id, String transactionRef);
+    /** Xem order của mình — ném FORBIDDEN nếu không phải owner. */
+    OrderDto getById(Long id, Long requestingUserId);
+    /** Xem order theo bookingId — kiểm tra booking thuộc về user. */
+    OrderDto getByBookingId(Long bookingId, Long requestingUserId);
+    /** Xác nhận thanh toán từ payment gateway (webhook). */
+    OrderDto confirmPayment(Long id, String transactionRef, String idempotencyKey);
     OrderDto refund(Long id);
     // Admin
-    Page<OrderDto> findAll(PaymentStatus status, Pageable pageable);
+    OrderDto getByIdAdmin(Long id);
+    Page<OrderDto> findAll(Long userId, PaymentStatus status, Pageable pageable);
     Order getEntityById(Long id);
 }

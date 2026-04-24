@@ -22,6 +22,10 @@ import java.time.Instant;
 @Builder
 public class Order extends BaseEntity {
 
+    @Version
+    @Column(nullable = false)
+    private Long version = 0L;
+
     @Column(name = "order_code", unique = true, nullable = false, length = 20)
     private String orderCode;
 
@@ -47,6 +51,9 @@ public class Order extends BaseEntity {
 
     @Column(name = "transaction_ref", length = 255)
     private String transactionRef;
+
+    @Column(name = "payment_idempotency_key", length = 120, unique = true)
+    private String paymentIdempotencyKey;
 
     /** Last 4 digits only — never store full card number (PCI DSS). */
     @Column(name = "card_last_four", length = 4)

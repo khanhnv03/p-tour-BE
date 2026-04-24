@@ -1,6 +1,7 @@
 package com.ptit.tour.domain.blog.dto;
 
 import com.ptit.tour.domain.blog.entity.BlogBlock;
+import com.ptit.tour.domain.blog.entity.BlogBlockImage;
 import com.ptit.tour.domain.blog.entity.BlogPost;
 import com.ptit.tour.domain.blog.enums.BlockType;
 import com.ptit.tour.domain.blog.enums.BlogStatus;
@@ -30,9 +31,17 @@ public record BlogPostDto(
         );
     }
 
-    public record BlockDto(Long id, BlockType blockType, String content, String imageUrl, int sortOrder) {
+    public record BlockDto(Long id, BlockType blockType, String content, String imageUrl, int sortOrder,
+                           List<BlockImageDto> images) {
         public static BlockDto from(BlogBlock b) {
-            return new BlockDto(b.getId(), b.getBlockType(), b.getContent(), b.getImageUrl(), b.getSortOrder());
+            return new BlockDto(b.getId(), b.getBlockType(), b.getContent(), b.getImageUrl(), b.getSortOrder(),
+                b.getImages().stream().map(BlockImageDto::from).toList());
+        }
+    }
+
+    public record BlockImageDto(Long id, String imageUrl, String altText, int sortOrder) {
+        public static BlockImageDto from(BlogBlockImage image) {
+            return new BlockImageDto(image.getId(), image.getImageUrl(), image.getAltText(), image.getSortOrder());
         }
     }
 }

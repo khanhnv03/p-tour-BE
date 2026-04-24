@@ -1,6 +1,10 @@
 spring:
   application:
     name: ptour-backend
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:BE/.env[.properties]
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
@@ -35,21 +39,20 @@ spring:
     default-property-inclusion: non_null
     serialization:
       write-dates-as-timestamps: false
-
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID:}
-            client-secret: ${GOOGLE_CLIENT_SECRET:}
-            scope: openid,profile,email
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-          facebook:
-            client-id: ${FACEBOOK_CLIENT_ID:}
-            client-secret: ${FACEBOOK_CLIENT_SECRET:}
-            scope: email,public_profile
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+  mail:
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: ${SPRING_MAIL_STARTTLS:true}
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 server:
   port: ${PORT:8080}
@@ -69,6 +72,10 @@ app:
   admin:
     email: ${ADMIN_EMAIL:admin@ptittour.com}
     password: ${ADMIN_PASSWORD:Admin@123456}
+  mail:
+    from: ${MAIL_FROM:${SPRING_MAIL_USERNAME:no-reply@ptittour.com}}
+  alerts:
+    error-email-to: ${ERROR_ALERT_EMAIL_TO:}
 
 springdoc:
   api-docs:

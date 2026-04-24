@@ -6,6 +6,7 @@ import com.ptit.tour.domain.blog.dto.BlogPostDto;
 import com.ptit.tour.domain.blog.dto.BlogPostSummaryDto;
 import com.ptit.tour.domain.blog.dto.SaveBlogPostRequest;
 import com.ptit.tour.domain.blog.entity.BlogBlock;
+import com.ptit.tour.domain.blog.entity.BlogBlockImage;
 import com.ptit.tour.domain.blog.entity.BlogPost;
 import com.ptit.tour.domain.blog.enums.BlogStatus;
 import com.ptit.tour.domain.blog.repository.BlogPostRepository;
@@ -54,6 +55,12 @@ public class BlogServiceImpl implements BlogService {
     @Override
     public Page<BlogPostSummaryDto> findAll(Pageable pageable) {
         return blogPostRepository.findAll(pageable).map(BlogPostSummaryDto::from);
+    }
+
+    @Override
+    public Page<BlogPostSummaryDto> searchAdmin(BlogStatus status, String keyword, Pageable pageable) {
+        return blogPostRepository.searchAdmin(status, keyword == null || keyword.isBlank() ? null : keyword, pageable)
+            .map(BlogPostSummaryDto::from);
     }
 
     @Override
@@ -120,9 +127,20 @@ public class BlogServiceImpl implements BlogService {
     private void applyBlocks(BlogPost post, SaveBlogPostRequest req) {
         if (req.blocks() == null) return;
         List<BlogBlock> blocks = req.blocks().stream()
-            .map(b -> BlogBlock.builder()
+            .map(b -> {
+                BlogBlock block = BlogBlock.builder()
                 .blogPost(post).blockType(b.blockType()).content(b.content())
-                .imageUrl(b.imageUrl()).sortOrder(b.sortOrder()).build())
+                .imageUrl(b.imageUrl()).sortOrder(b.sortOrder()).build();
+                if (b.images() != null) {
+                    b.images().forEach(image -> block.getImages().add(BlogBlockImage.builder()
+                        .blogBlock(block)
+                        .imageUrl(image.imageUrl())
+                        .altText(image.altText())
+                        .sortOrder(image.sortOrder())
+                        .build()));
+                }
+                return block;
+            })
             .toList();
         post.getBlocks().addAll(blocks);
     }

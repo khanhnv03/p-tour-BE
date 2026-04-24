@@ -191,6 +191,9 @@ CREATE TABLE bookings (
     departure_id    INT UNSIGNED    NOT NULL,
     deal_id         INT UNSIGNED    NULL,
     guest_count     TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    contact_name    VARCHAR(255)    NOT NULL,
+    contact_email   VARCHAR(255)    NOT NULL,
+    contact_phone   VARCHAR(30)     NULL,
     subtotal        DECIMAL(15,2)   NOT NULL,
     tax_amount      DECIMAL(15,2)   NOT NULL DEFAULT 0,
     discount_amount DECIMAL(15,2)   NOT NULL DEFAULT 0,
@@ -298,7 +301,7 @@ CREATE TABLE blog_blocks (
     block_type      ENUM('paragraph', 'heading', 'quote', 'image', 'gallery') NOT NULL,
     content         TEXT            NULL COMMENT 'Text content hoặc HTML',
     image_url       VARCHAR(500)    NULL COMMENT 'Dùng cho block loại image',
-    sort_order      SMALLINT        NOT NULL DEFAULT 0,
+    sort_order      INT             NOT NULL DEFAULT 0,
     created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_blocks_post
         FOREIGN KEY (blog_post_id) REFERENCES blog_posts(id) ON DELETE CASCADE

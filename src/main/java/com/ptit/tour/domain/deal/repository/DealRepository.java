@@ -19,6 +19,26 @@ public interface DealRepository extends JpaRepository<Deal, Long> {
 
     Page<Deal> findByStatus(DealStatus status, Pageable pageable);
 
+    @Query("""
+        SELECT d FROM Deal d
+        WHERE (:status IS NULL OR d.status = :status)
+          AND (:keyword IS NULL
+            OR LOWER(d.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(d.promoCode) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(d.category) LIKE LOWER(CONCAT('%', :keyword, '%')))
+          AND (
+            :dateState IS NULL
+            OR (:dateState = 'UPCOMING' AND d.validFrom > :today)
+            OR (:dateState = 'ACTIVE_NOW' AND d.validFrom <= :today AND d.validTo >= :today)
+            OR (:dateState = 'EXPIRED' AND d.validTo < :today)
+          )
+        """)
+    Page<Deal> searchAdmin(@Param("status") DealStatus status,
+                           @Param("keyword") String keyword,
+                           @Param("dateState") String dateState,
+                           @Param("today") LocalDate today,
+                           Pageable pageable);
+
     /** Find active auto-apply deals valid today with min order satisfied. */
     @Query("""
         SELECT d FROM Deal d

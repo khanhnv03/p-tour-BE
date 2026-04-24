@@ -27,18 +27,25 @@ public class DealServiceImpl implements DealService {
 
     @Override
     public List<DealDto> getActivePublicDeals() {
-        return dealRepository.findByStatus(DealStatus.ACTIVE, Pageable.unpaged())
-            .map(DealDto::from).toList();
+        LocalDate today = LocalDate.now();
+        return dealRepository.searchAdmin(DealStatus.ACTIVE, null, "ACTIVE_NOW", today, Pageable.unpaged())
+            .map(this::toDto).toList();
     }
 
     @Override
     public Page<DealDto> findAll(Pageable pageable) {
-        return dealRepository.findAll(pageable).map(DealDto::from);
+        return dealRepository.findAll(pageable).map(this::toDto);
+    }
+
+    @Override
+    public Page<DealDto> searchAdmin(DealStatus status, String keyword, String dateState, Pageable pageable) {
+        return dealRepository.searchAdmin(status, normalize(keyword), normalizeDateState(dateState), LocalDate.now(), pageable)
+            .map(this::toDto);
     }
 
     @Override
     public DealDto getById(Long id) {
-        return DealDto.from(getEntityById(id));
+        return toDto(getEntityById(id));
     }
 
     @Override
@@ -76,7 +83,7 @@ public class DealServiceImpl implements DealService {
             .maxDiscountAmount(req.maxDiscountAmount())
             .usageLimit(req.usageLimit()).validFrom(req.validFrom())
             .validTo(req.validTo()).status(req.status()).build();
-        return DealDto.from(dealRepository.save(deal));
+        return toDto(dealRepository.save(deal));
     }
 
     @Override
@@ -93,7 +100,7 @@ public class DealServiceImpl implements DealService {
         deal.setUsageLimit(req.usageLimit());
         deal.setValidFrom(req.validFrom()); deal.setValidTo(req.validTo());
         deal.setStatus(req.status());
-        return DealDto.from(dealRepository.save(deal));
+        return toDto(dealRepository.save(deal));
     }
 
     @Override
@@ -118,5 +125,29 @@ public class DealServiceImpl implements DealService {
             throw new BusinessException("Đơn hàng chưa đạt giá trị tối thiểu " + deal.getMinOrderValue() + " VNĐ");
         if (deal.getUsageLimit() != null && deal.getUsageCount() >= deal.getUsageLimit())
             throw new BusinessException("Deal đã hết lượt sử dụng", HttpStatus.GONE);
+    }
+
+    private DealDto toDto(Deal deal) {
+        LocalDate today = LocalDate.now();
+        DealStatus effectiveStatus = deal.getStatus();
+        if (deal.getStatus() == DealStatus.ACTIVE && today.isAfter(deal.getValidTo())) {
+            effectiveStatus = DealStatus.EXPIRED;
+        }
+        return DealDto.from(deal, effectiveStatus);
+    }
+
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value;
+    }
+
+    private String normalizeDateState(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim().toUpperCase();
+        return switch (normalized) {
+            case "UPCOMING", "ACTIVE_NOW", "EXPIRED" -> normalized;
+            default -> throw new BusinessException("dateState không hợp lệ");
+        };
     }
 }

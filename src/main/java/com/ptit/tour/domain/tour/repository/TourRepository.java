@@ -26,6 +26,11 @@ public interface TourRepository extends JpaRepository<Tour, Long> {
 
     Page<Tour> findByDestinationIdAndStatus(Long destinationId, TourStatus status, Pageable pageable);
 
+    long countByStatus(TourStatus status);
+
+    @Query("SELECT COALESCE(AVG(t.rating), 0) FROM Tour t WHERE t.status = 'PUBLISHED' AND t.reviewCount > 0")
+    BigDecimal averagePublishedRating();
+
     @Query(value = """
         SELECT DISTINCT t FROM Tour t
         LEFT JOIN t.departures d
@@ -76,6 +81,33 @@ public interface TourRepository extends JpaRepository<Tour, Long> {
         @Param("minPrice") BigDecimal minPrice,
         @Param("maxPrice") BigDecimal maxPrice,
         @Param("minRating") BigDecimal minRating,
+        Pageable pageable
+    );
+
+    @Query(value = """
+        SELECT DISTINCT t FROM Tour t
+        LEFT JOIN t.departures d
+        WHERE (:status IS NULL OR t.status = :status)
+          AND (:keyword IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+          AND (:destinationId IS NULL OR t.destination.id = :destinationId)
+          AND (:departureDate IS NULL OR d.departureDate = :departureDate)
+          AND (:availableSlots IS NULL OR (d.availableSlots - d.bookedSlots) >= :availableSlots)
+        """,
+        countQuery = """
+        SELECT COUNT(DISTINCT t) FROM Tour t
+        LEFT JOIN t.departures d
+        WHERE (:status IS NULL OR t.status = :status)
+          AND (:keyword IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+          AND (:destinationId IS NULL OR t.destination.id = :destinationId)
+          AND (:departureDate IS NULL OR d.departureDate = :departureDate)
+          AND (:availableSlots IS NULL OR (d.availableSlots - d.bookedSlots) >= :availableSlots)
+        """)
+    Page<Tour> searchAdmin(
+        @Param("keyword") String keyword,
+        @Param("destinationId") Long destinationId,
+        @Param("status") TourStatus status,
+        @Param("departureDate") LocalDate departureDate,
+        @Param("availableSlots") Integer availableSlots,
         Pageable pageable
     );
 

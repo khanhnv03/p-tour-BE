@@ -22,6 +22,13 @@ public record SaveBlogPostRequest(
         @NotNull BlockType blockType,
         String content,
         @Size(max = 500) String imageUrl,
+        int sortOrder,
+        @Valid List<BlockImageRequest> images
+    ) {}
+
+    public record BlockImageRequest(
+        @NotBlank @Size(max = 500) String imageUrl,
+        @Size(max = 255) String altText,
         int sortOrder
     ) {}
 }

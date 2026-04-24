@@ -5,6 +5,7 @@ import com.ptit.tour.common.response.PageResponse;
 import com.ptit.tour.domain.deal.dto.ApplyDealResponse;
 import com.ptit.tour.domain.deal.dto.DealDto;
 import com.ptit.tour.domain.deal.dto.SaveDealRequest;
+import com.ptit.tour.domain.deal.enums.DealStatus;
 import com.ptit.tour.domain.deal.service.DealService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -50,8 +51,11 @@ public class DealController {
     @Operation(summary = "[Admin] Danh sách tất cả deals")
     @GetMapping("/admin/deals")
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<PageResponse<DealDto>> list(@PageableDefault(size = 20) Pageable pageable) {
-        return ApiResponse.ok(PageResponse.of(dealService.findAll(pageable)));
+    public ApiResponse<PageResponse<DealDto>> list(@RequestParam(required = false) DealStatus status,
+                                                   @RequestParam(required = false) String keyword,
+                                                   @RequestParam(required = false) String dateState,
+                                                   @PageableDefault(size = 20) Pageable pageable) {
+        return ApiResponse.ok(PageResponse.of(dealService.searchAdmin(status, keyword, dateState, pageable)));
     }
 
     @Operation(summary = "[Admin] Chi tiết deal")

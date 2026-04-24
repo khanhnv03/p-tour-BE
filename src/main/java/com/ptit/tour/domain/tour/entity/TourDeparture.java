@@ -19,6 +19,10 @@ import java.time.LocalDate;
 @Builder
 public class TourDeparture extends BaseEntity {
 
+    @Version
+    @Column(nullable = false)
+    private Long version = 0L;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "tour_id", nullable = false)
     private Tour tour;

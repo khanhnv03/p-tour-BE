@@ -2,13 +2,16 @@ package com.ptit.tour.domain.tour.service;
 
 import com.ptit.tour.common.exception.BusinessException;
 import com.ptit.tour.common.exception.ResourceNotFoundException;
+import com.ptit.tour.domain.booking.repository.BookingRepository;
 import com.ptit.tour.domain.destination.service.DestinationService;
+import com.ptit.tour.domain.tour.dto.SaveTourDepartureRequest;
 import com.ptit.tour.domain.tour.dto.SaveTourRequest;
 import com.ptit.tour.domain.tour.dto.TourDetailDto;
 import com.ptit.tour.domain.tour.dto.TourSummaryDto;
 import com.ptit.tour.domain.tour.entity.*;
 import com.ptit.tour.domain.tour.enums.TourDifficulty;
 import com.ptit.tour.domain.tour.enums.TourStatus;
+import com.ptit.tour.domain.tour.repository.TourDepartureRepository;
 import com.ptit.tour.domain.tour.repository.TourRepository;
 import com.ptit.tour.util.SlugUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +31,9 @@ import java.util.List;
 public class TourServiceImpl implements TourService {
 
     private final TourRepository tourRepository;
+    private final TourDepartureRepository departureRepository;
     private final DestinationService destinationService;
+    private final BookingRepository bookingRepository;
 
     @Override
     public Page<TourSummaryDto> search(String keyword, Long destinationId,
@@ -56,6 +61,11 @@ public class TourServiceImpl implements TourService {
     }
 
     @Override
+    public TourDetailDto getAdminById(Long id) {
+        return TourDetailDto.from(getEntityById(id));
+    }
+
+    @Override
     public List<TourSummaryDto> getFeatured(int limit) {
         return tourRepository.findFeatured(PageRequest.of(0, limit)).stream()
             .map(TourSummaryDto::from).toList();
@@ -65,6 +75,13 @@ public class TourServiceImpl implements TourService {
     public List<TourSummaryDto> getPopular(int limit) {
         return tourRepository.findPopular(PageRequest.of(0, limit)).stream()
             .map(TourSummaryDto::from).toList();
+    }
+
+    @Override
+    public Page<TourSummaryDto> searchAdmin(String keyword, Long destinationId, TourStatus status,
+                                            LocalDate departureDate, Integer availableSlots, Pageable pageable) {
+        return tourRepository.searchAdmin(keyword, destinationId, status, departureDate, availableSlots, pageable)
+            .map(TourSummaryDto::from);
     }
 
     @Override
@@ -118,7 +135,58 @@ public class TourServiceImpl implements TourService {
     @Override
     @Transactional
     public void delete(Long id) {
-        tourRepository.delete(getEntityById(id));
+        Tour tour = getEntityById(id);
+        if (bookingRepository.existsByTourId(id)) {
+            tour.setStatus(TourStatus.ARCHIVED);
+            tourRepository.save(tour);
+            return;
+        }
+        tourRepository.delete(tour);
+    }
+
+    @Override
+    @Transactional
+    public TourDetailDto createDeparture(Long tourId, SaveTourDepartureRequest request) {
+        Tour tour = getEntityById(tourId);
+        validateDeparture(request);
+        TourDeparture departure = TourDeparture.builder()
+            .tour(tour)
+            .departureDate(request.departureDate())
+            .availableSlots(request.availableSlots())
+            .bookedSlots(request.bookedSlots())
+            .priceOverride(request.priceOverride())
+            .status(request.status())
+            .build();
+        tour.getDepartures().add(departure);
+        return TourDetailDto.from(tourRepository.save(tour));
+    }
+
+    @Override
+    @Transactional
+    public TourDetailDto updateDeparture(Long tourId, Long departureId, SaveTourDepartureRequest request) {
+        validateDeparture(request);
+        TourDeparture departure = departureRepository.findByIdAndTourId(departureId, tourId)
+            .orElseThrow(() -> new ResourceNotFoundException("TourDeparture", departureId));
+        departure.setDepartureDate(request.departureDate());
+        departure.setAvailableSlots(request.availableSlots());
+        departure.setBookedSlots(request.bookedSlots());
+        departure.setPriceOverride(request.priceOverride());
+        departure.setStatus(request.status());
+        departureRepository.save(departure);
+        return TourDetailDto.from(getEntityById(tourId));
+    }
+
+    @Override
+    @Transactional
+    public void deleteDeparture(Long tourId, Long departureId) {
+        TourDeparture departure = departureRepository.findByIdAndTourId(departureId, tourId)
+            .orElseThrow(() -> new ResourceNotFoundException("TourDeparture", departureId));
+        if (departure.getBookedSlots() > 0) {
+            departure.setStatus(com.ptit.tour.domain.tour.enums.DepartureStatus.CANCELLED);
+            departureRepository.save(departure);
+            return;
+        }
+        departureRepository.delete(departure);
     }
 
     @Override
@@ -164,6 +232,12 @@ public class TourServiceImpl implements TourService {
                 return day;
             }).toList();
             tour.getItineraryDays().addAll(days);
+        }
+    }
+
+    private void validateDeparture(SaveTourDepartureRequest request) {
+        if (request.bookedSlots() > request.availableSlots()) {
+            throw new BusinessException("Số chỗ đã đặt không được lớn hơn số chỗ mở bán");
         }
     }
 }

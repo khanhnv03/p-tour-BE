@@ -1,8 +1,10 @@
 package com.ptit.tour.domain.tour.service;
 
 import com.ptit.tour.domain.tour.dto.SaveTourRequest;
+import com.ptit.tour.domain.tour.dto.SaveTourDepartureRequest;
 import com.ptit.tour.domain.tour.dto.TourDetailDto;
 import com.ptit.tour.domain.tour.dto.TourSummaryDto;
+import com.ptit.tour.domain.tour.enums.TourStatus;
 import com.ptit.tour.domain.tour.entity.Tour;
 import com.ptit.tour.domain.tour.enums.TourDifficulty;
 import org.springframework.data.domain.Page;
@@ -24,15 +26,26 @@ public interface TourService {
 
     TourDetailDto getBySlug(String slug);
 
+    TourDetailDto getAdminById(Long id);
+
     List<TourSummaryDto> getFeatured(int limit);
 
     List<TourSummaryDto> getPopular(int limit);
+
+    Page<TourSummaryDto> searchAdmin(String keyword, Long destinationId, TourStatus status,
+                                     LocalDate departureDate, Integer availableSlots, Pageable pageable);
 
     TourDetailDto create(SaveTourRequest request);
 
     TourDetailDto update(Long id, SaveTourRequest request);
 
     void delete(Long id);
+
+    TourDetailDto createDeparture(Long tourId, SaveTourDepartureRequest request);
+
+    TourDetailDto updateDeparture(Long tourId, Long departureId, SaveTourDepartureRequest request);
+
+    void deleteDeparture(Long tourId, Long departureId);
 
     Tour getEntityById(Long id);
 }

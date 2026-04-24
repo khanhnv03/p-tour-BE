@@ -5,6 +5,7 @@ import com.ptit.tour.common.response.PageResponse;
 import com.ptit.tour.common.security.UserPrincipal;
 import com.ptit.tour.domain.booking.dto.BookingDto;
 import com.ptit.tour.domain.booking.dto.CreateBookingRequest;
+import com.ptit.tour.domain.booking.dto.TicketDto;
 import com.ptit.tour.domain.booking.enums.BookingStatus;
 import com.ptit.tour.domain.booking.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,10 +14,15 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.nio.charset.StandardCharsets;
 
 @Tag(name = "Bookings")
 @RestController
@@ -33,10 +39,11 @@ public class BookingController {
         return ApiResponse.created(bookingService.create(principal.getId(), request));
     }
 
-    @Operation(summary = "Xem chi tiết booking")
+    @Operation(summary = "Xem chi tiết booking của mình")
     @GetMapping("/bookings/{id}")
-    public ApiResponse<BookingDto> getById(@PathVariable Long id) {
-        return ApiResponse.ok(bookingService.getById(id));
+    public ApiResponse<BookingDto> getById(@PathVariable Long id,
+                                            @AuthenticationPrincipal UserPrincipal principal) {
+        return ApiResponse.ok(bookingService.getById(id, principal.getId()));
     }
 
     @Operation(summary = "Lịch sử đặt tour của tôi")
@@ -54,7 +61,44 @@ public class BookingController {
         return ApiResponse.ok(bookingService.cancel(id, principal.getId()));
     }
 
+    @Operation(summary = "Lấy e-ticket sau khi booking được xác nhận")
+    @GetMapping("/bookings/{id}/ticket")
+    public ApiResponse<TicketDto> getTicket(@PathVariable Long id,
+                                             @AuthenticationPrincipal UserPrincipal principal) {
+        return ApiResponse.ok(bookingService.getTicket(id, principal.getId()));
+    }
+
+    @Operation(summary = "Tải e-ticket PDF bằng đăng nhập hoặc signed token")
+    @GetMapping(value = "/bookings/{id}/ticket/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> downloadTicketPdf(
+        @PathVariable Long id,
+        @AuthenticationPrincipal UserPrincipal principal,
+        @RequestParam(required = false) String token
+    ) {
+        Long requestingUserId = principal != null ? principal.getId() : null;
+        boolean adminAccess = principal != null && "ADMIN".equals(principal.getRole());
+        var pdf = bookingService.getTicketPdf(id, requestingUserId, adminAccess, token);
+
+        return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_PDF)
+            .header(
+                "Content-Disposition",
+                ContentDisposition.attachment()
+                    .filename(pdf.fileName(), StandardCharsets.UTF_8)
+                    .build()
+                    .toString()
+            )
+            .body(pdf.content());
+    }
+
     // ── Admin ────────────────────────────────────────────────────────────────
+
+    @Operation(summary = "[Admin] Chi tiết booking bất kỳ")
+    @GetMapping("/admin/bookings/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<BookingDto> adminGetById(@PathVariable Long id) {
+        return ApiResponse.ok(bookingService.getByIdAdmin(id));
+    }
 
     @Operation(summary = "[Admin] Danh sách bookings")
     @GetMapping("/admin/bookings")

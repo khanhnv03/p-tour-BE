@@ -5,6 +5,9 @@ import com.ptit.tour.domain.shared.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "blog_blocks")
 @Getter
@@ -30,4 +33,9 @@ public class BlogBlock extends BaseEntity {
 
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
+
+    @OneToMany(mappedBy = "blogBlock", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("sortOrder ASC")
+    @Builder.Default
+    private List<BlogBlockImage> images = new ArrayList<>();
 }

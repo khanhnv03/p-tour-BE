@@ -6,6 +6,7 @@ import com.ptit.tour.common.security.UserPrincipal;
 import com.ptit.tour.domain.blog.dto.BlogPostDto;
 import com.ptit.tour.domain.blog.dto.BlogPostSummaryDto;
 import com.ptit.tour.domain.blog.dto.SaveBlogPostRequest;
+import com.ptit.tour.domain.blog.enums.BlogStatus;
 import com.ptit.tour.domain.blog.service.BlogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,8 +46,10 @@ public class BlogController {
     @GetMapping("/admin/blog")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<PageResponse<BlogPostSummaryDto>> listAll(
+        @RequestParam(required = false) BlogStatus status,
+        @RequestParam(required = false) String keyword,
         @PageableDefault(size = 20) Pageable pageable) {
-        return ApiResponse.ok(PageResponse.of(blogService.findAll(pageable)));
+        return ApiResponse.ok(PageResponse.of(blogService.searchAdmin(status, keyword, pageable)));
     }
 
     @Operation(summary = "[Admin] Chi tiết bài viết theo ID")

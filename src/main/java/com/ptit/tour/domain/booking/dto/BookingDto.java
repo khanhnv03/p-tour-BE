@@ -19,6 +19,9 @@ public record BookingDto(
     LocalDate departureDate,
     Long dealId,
     int guestCount,
+    String contactName,
+    String contactEmail,
+    String contactPhone,
     BigDecimal subtotal,
     BigDecimal taxAmount,
     BigDecimal discountAmount,
@@ -34,7 +37,8 @@ public record BookingDto(
             b.getTour().getId(), b.getTour().getTitle(), b.getTour().getCoverImageUrl(),
             b.getDeparture().getId(), b.getDeparture().getDepartureDate(),
             b.getDeal() != null ? b.getDeal().getId() : null,
-            b.getGuestCount(), b.getSubtotal(), b.getTaxAmount(),
+            b.getGuestCount(), b.getContactName(), b.getContactEmail(), b.getContactPhone(),
+            b.getSubtotal(), b.getTaxAmount(),
             b.getDiscountAmount(), b.getTotalAmount(), b.getStatus(),
             b.getNotes(), b.getCreatedAt()
         );

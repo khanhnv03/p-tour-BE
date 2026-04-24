@@ -45,6 +45,15 @@ public class Booking extends BaseEntity {
     @Column(name = "guest_count", nullable = false)
     private int guestCount;
 
+    @Column(name = "contact_name", nullable = false, length = 255)
+    private String contactName;
+
+    @Column(name = "contact_email", nullable = false, length = 255)
+    private String contactEmail;
+
+    @Column(name = "contact_phone", length = 30)
+    private String contactPhone;
+
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal subtotal;
 

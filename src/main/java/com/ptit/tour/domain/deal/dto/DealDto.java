@@ -28,9 +28,13 @@ public record DealDto(
     DealStatus status
 ) {
     public static DealDto from(Deal d) {
+        return from(d, d.getStatus());
+    }
+
+    public static DealDto from(Deal d, DealStatus effectiveStatus) {
         return new DealDto(d.getId(), d.getTitle(), d.getDescription(), d.getCampaignImageUrl(),
             d.getBadgeText(), d.getCategory(), d.getDiscountType(), d.getDiscountValue(),
             d.getPromoCode(), d.getDisplayMode(), d.getMinOrderValue(), d.getMaxDiscountAmount(),
-            d.getUsageLimit(), d.getUsageCount(), d.getValidFrom(), d.getValidTo(), d.getStatus());
+            d.getUsageLimit(), d.getUsageCount(), d.getValidFrom(), d.getValidTo(), effectiveStatus);
     }
 }
